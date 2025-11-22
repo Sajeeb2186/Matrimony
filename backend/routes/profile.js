@@ -5,6 +5,7 @@ const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
 router.post('/create', protect, profileController.createProfile);
+router.get('/me', protect, profileController.getMyProfile); // Alias for my-profile
 router.get('/my-profile', protect, profileController.getMyProfile);
 router.put('/update', protect, profileController.updateProfile);
 router.get('/:profileId', protect, profileController.getProfileById);

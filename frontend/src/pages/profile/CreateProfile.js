@@ -17,17 +17,23 @@ import {
   Select,
   Alert,
   CircularProgress,
+  Avatar,
+  IconButton,
 } from '@mui/material';
+import { PhotoCamera, Delete } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import profileService from '../../services/profileService';
+import api from '../../services/api';
 
-const steps = ['Personal Info', 'Professional Info', 'Location & Religious Info'];
+const steps = ['Personal Info', 'Professional Info', 'Location & Religious Info', 'Upload Photo'];
 
 const CreateProfile = () => {
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
 
   const [formData, setFormData] = useState({
     personalInfo: {
@@ -72,6 +78,27 @@ const CreateProfile = () => {
     });
   };
 
+  const handlePhotoChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please upload an image file');
+        return;
+      }
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  };
+
   const handleNext = () => {
     setActiveStep((prevStep) => prevStep + 1);
   };
@@ -85,7 +112,27 @@ const CreateProfile = () => {
     setError('');
 
     try {
+      // First create the profile
       await profileService.createProfile(formData);
+      
+      // If photo is selected, upload it
+      if (photoFile) {
+        const photoFormData = new FormData();
+        photoFormData.append('photo', photoFile);
+        
+        try {
+          await api.post('/profile/upload-photo', photoFormData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+        } catch (photoErr) {
+          console.error('Photo upload error:', photoErr);
+          // Don't fail if photo upload fails
+          toast.warning('Profile created but photo upload failed');
+        }
+      }
+      
       toast.success('Profile created successfully!');
       navigate('/dashboard');
     } catch (err) {
@@ -330,6 +377,68 @@ const CreateProfile = () => {
                   <MenuItem value="occasionally">Occasionally</MenuItem>
                 </Select>
               </FormControl>
+            </Grid>
+          </Grid>
+        );
+
+      case 3:
+        return (
+          <Grid container spacing={3} justifyContent="center">
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom textAlign="center">
+                Upload Profile Photo
+              </Typography>
+              <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mb: 3 }}>
+                Add a clear photo of yourself (Optional but recommended)
+              </Typography>
+            </Grid>
+            
+            <Grid item xs={12} display="flex" flexDirection="column" alignItems="center">
+              <Box sx={{ position: 'relative', mb: 2 }}>
+                <Avatar
+                  src={photoPreview}
+                  sx={{ 
+                    width: 200, 
+                    height: 200, 
+                    border: '4px solid',
+                    borderColor: 'primary.main',
+                  }}
+                />
+                {photoPreview && (
+                  <IconButton
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      right: 0,
+                      bgcolor: 'error.main',
+                      color: 'white',
+                      '&:hover': { bgcolor: 'error.dark' },
+                    }}
+                    size="small"
+                    onClick={handleRemovePhoto}
+                  >
+                    <Delete />
+                  </IconButton>
+                )}
+              </Box>
+              
+              <Button
+                variant="contained"
+                component="label"
+                startIcon={<PhotoCamera />}
+              >
+                {photoPreview ? 'Change Photo' : 'Upload Photo'}
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                />
+              </Button>
+              
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                Max file size: 5MB. Formats: JPG, PNG
+              </Typography>
             </Grid>
           </Grid>
         );

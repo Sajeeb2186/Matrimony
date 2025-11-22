@@ -209,6 +209,77 @@ profileSchema.pre('save', async function(next) {
   next();
 });
 
+// Virtual properties for backward compatibility
+profileSchema.virtual('firstName').get(function() {
+  return this.personalInfo?.firstName;
+});
+
+profileSchema.virtual('lastName').get(function() {
+  return this.personalInfo?.lastName;
+});
+
+profileSchema.virtual('gender').get(function() {
+  return this.personalInfo?.gender;
+});
+
+profileSchema.virtual('age').get(function() {
+  if (this.personalInfo?.dateOfBirth) {
+    const today = new Date();
+    const birthDate = new Date(this.personalInfo.dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  }
+  return null;
+});
+
+profileSchema.virtual('profilePhoto').get(function() {
+  if (this.photos && this.photos.length > 0) {
+    const profilePhoto = this.photos.find(p => p.isProfile);
+    return profilePhoto ? profilePhoto.url : this.photos[0].url;
+  }
+  return '/default-avatar.png';
+});
+
+profileSchema.virtual('education').get(function() {
+  return this.professionalInfo?.education;
+});
+
+profileSchema.virtual('occupation').get(function() {
+  return this.professionalInfo?.occupation;
+});
+
+profileSchema.virtual('city').get(function() {
+  return this.location?.city;
+});
+
+profileSchema.virtual('state').get(function() {
+  return this.location?.state;
+});
+
+profileSchema.virtual('country').get(function() {
+  return this.location?.country;
+});
+
+profileSchema.virtual('religion').get(function() {
+  return this.religiousInfo?.religion;
+});
+
+profileSchema.virtual('height').get(function() {
+  return this.personalInfo?.height;
+});
+
+profileSchema.virtual('maritalStatus').get(function() {
+  return this.personalInfo?.maritalStatus;
+});
+
+// Ensure virtuals are included when converting to JSON
+profileSchema.set('toJSON', { virtuals: true });
+profileSchema.set('toObject', { virtuals: true });
+
 // Index for better search performance
 profileSchema.index({ 'personalInfo.gender': 1, 'location.country': 1, 'location.state': 1 });
 

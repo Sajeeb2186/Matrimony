@@ -7,238 +7,218 @@ import {
   Box,
   Tabs,
   Tab,
+  CircularProgress,
+  Alert,
+  Button,
   Card,
   CardContent,
   Avatar,
-  Button,
   Chip,
-  IconButton,
-  CircularProgress,
 } from '@mui/material';
-import {
-  ThumbUp,
-  ThumbDown,
-  Message,
-  Favorite,
-  AccessTime,
-  CheckCircle,
-  Cancel,
-} from '@mui/icons-material';
-import { motion } from 'framer-motion';
+import { Send, Inbox, CheckCircle, Cancel } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import interactionService from '../services/interactionService';
 
 const Interests = () => {
+  const navigate = useNavigate();
   const [tab, setTab] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [interests, setInterests] = useState([]);
+  const [sentInterests, setSentInterests] = useState([]);
+  const [receivedInterests, setReceivedInterests] = useState([]);
+
+  const loadInterests = async () => {
+    setLoading(true);
+    try {
+      if (tab === 0) {
+        // Sent interests
+        const response = await interactionService.getSentInterests();
+        setSentInterests(response.data || []);
+      } else {
+        // Received interests
+        const response = await interactionService.getReceivedInterests();
+        setReceivedInterests(response.data || []);
+      }
+    } catch (err) {
+      console.error('Load interests error:', err);
+      toast.error('Failed to load interests');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadInterests();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
-  const loadInterests = () => {
-    setLoading(true);
-    setTimeout(() => {
-      const mockInterests = [
-        {
-          id: 1,
-          name: 'Rachel Green',
-          age: 27,
-          occupation: 'Fashion Designer',
-          location: 'Los Angeles, USA',
-          status: 'pending',
-          sentDate: '2 hours ago',
-          image: null,
-        },
-        {
-          id: 2,
-          name: 'Monica Geller',
-          age: 29,
-          occupation: 'Chef',
-          location: 'New York, USA',
-          status: 'accepted',
-          sentDate: '1 day ago',
-          image: null,
-        },
-        {
-          id: 3,
-          name: 'Phoebe Buffay',
-          age: 28,
-          occupation: 'Musician',
-          location: 'San Diego, USA',
-          status: 'rejected',
-          sentDate: '3 days ago',
-          image: null,
-        },
-      ];
-
-      const filtered = mockInterests.filter((interest) => {
-        if (tab === 0) return true; // All
-        if (tab === 1) return interest.status === 'pending'; // Received
-        if (tab === 2) return interest.status === 'accepted' || interest.status === 'rejected'; // Sent
-        return true;
-      });
-
-      setInterests(filtered);
-      setLoading(false);
-    }, 800);
-  };
-
-  const handleAccept = (id) => {
-    setInterests(
-      interests.map((i) =>
-        i.id === id ? { ...i, status: 'accepted' } : i
-      )
-    );
-  };
-
-  const handleReject = (id) => {
-    setInterests(
-      interests.map((i) =>
-        i.id === id ? { ...i, status: 'rejected' } : i
-      )
-    );
-  };
-
-  const getStatusChip = (status) => {
-    switch (status) {
-      case 'pending':
-        return <Chip label="Pending" size="small" color="warning" icon={<AccessTime />} />;
-      case 'accepted':
-        return <Chip label="Accepted" size="small" color="success" icon={<CheckCircle />} />;
-      case 'rejected':
-        return <Chip label="Declined" size="small" color="error" icon={<Cancel />} />;
-      default:
-        return null;
+  const handleAcceptInterest = async (interestId) => {
+    try {
+      await interactionService.respondToInterest(interestId, 'accepted');
+      toast.success('Interest accepted!');
+      loadInterests();
+    } catch (err) {
+      toast.error('Failed to accept interest');
     }
   };
 
-  const InterestCard = ({ interest }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card elevation={2}>
-        <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+  const handleRejectInterest = async (interestId) => {
+    try {
+      await interactionService.respondToInterest(interestId, 'rejected');
+      toast.success('Interest rejected');
+      loadInterests();
+    } catch (err) {
+      toast.error('Failed to reject interest');
+    }
+  };
+
+  const handleViewProfile = (profileId) => {
+    navigate(`/profile/${profileId}`);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'accepted':
+        return 'success';
+      case 'rejected':
+        return 'error';
+      default:
+        return 'warning';
+    }
+  };
+
+  const API_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
+
+  const renderInterestCard = (interest, isSent = false) => {
+    const profile = isSent ? interest.toProfile : interest.fromProfile;
+    if (!profile) return null;
+
+    const profilePhoto = profile.photos?.find(p => p.isProfile)?.url || profile.photos?.[0]?.url;
+    const imageUrl = profilePhoto && profilePhoto.startsWith('/uploads')
+      ? `${API_URL}${profilePhoto}`
+      : profilePhoto || '/default-avatar.png';
+
+    const name = `${profile.personalInfo?.firstName} ${profile.personalInfo?.lastName}`;
+    const location = `${profile.location?.city}, ${profile.location?.state}`;
+
+    return (
+      <Grid item xs={12} sm={6} md={4} key={interest._id}>
+        <Card sx={{ height: '100%' }}>
+          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
             <Avatar
-              sx={{
-                width: 60,
-                height: 60,
-                mr: 2,
-                bgcolor: 'primary.main',
-                fontSize: '1.5rem',
-              }}
-            >
-              {interest.name.charAt(0)}
-            </Avatar>
+              src={imageUrl}
+              alt={name}
+              sx={{ width: 64, height: 64 }}
+            />
             <Box sx={{ flex: 1 }}>
               <Typography variant="h6" fontWeight={600}>
-                {interest.name}
+                {name}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {interest.age} yrs, {interest.occupation}
+                {location}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {interest.location}
-              </Typography>
-              <Box sx={{ mt: 1 }}>
-                {getStatusChip(interest.status)}
-              </Box>
             </Box>
-            <Typography variant="caption" color="text.secondary">
-              {interest.sentDate}
-            </Typography>
           </Box>
 
-          {interest.status === 'pending' && (
-            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-              <Button
-                variant="contained"
-                startIcon={<ThumbUp />}
-                onClick={() => handleAccept(interest.id)}
-                fullWidth
-              >
-                Accept
-              </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={<ThumbDown />}
-                onClick={() => handleReject(interest.id)}
-                fullWidth
-              >
-                Decline
-              </Button>
+          <CardContent>
+            <Box sx={{ mb: 2 }}>
+              <Chip
+                label={interest.status.toUpperCase()}
+                color={getStatusColor(interest.status)}
+                size="small"
+              />
             </Box>
-          )}
 
-          {interest.status === 'accepted' && (
-            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              🎓 {profile.professionalInfo?.education}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              💼 {profile.professionalInfo?.occupation}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {new Date(interest.createdAt).toLocaleDateString()}
+            </Typography>
+
+            <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
               <Button
-                variant="contained"
-                startIcon={<Message />}
+                size="small"
+                variant="outlined"
+                onClick={() => handleViewProfile(profile.profileId)}
                 fullWidth
               >
-                Send Message
+                View Profile
               </Button>
-              <IconButton color="primary">
-                <Favorite />
-              </IconButton>
+              
+              {!isSent && interest.status === 'pending' && (
+                <>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="success"
+                    startIcon={<CheckCircle />}
+                    onClick={() => handleAcceptInterest(interest._id)}
+                    fullWidth
+                  >
+                    Accept
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    startIcon={<Cancel />}
+                    onClick={() => handleRejectInterest(interest._id)}
+                    fullWidth
+                  >
+                    Reject
+                  </Button>
+                </>
+              )}
             </Box>
-          )}
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
+          </CardContent>
+        </Card>
+      </Grid>
+    );
+  };
+
+  if (loading) {
+    return (
+      <Container sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  const interests = tab === 0 ? sentInterests : receivedInterests;
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box sx={{ mb: 3 }}>
+      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
         <Typography variant="h4" fontWeight={700} gutterBottom>
           Interests
         </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Manage interest requests from other members
+        <Typography variant="body2" color="text.secondary">
+          Manage your sent and received interests
         </Typography>
-      </Box>
 
-      <Paper elevation={2} sx={{ mb: 3 }}>
         <Tabs
           value={tab}
           onChange={(e, newValue) => setTab(newValue)}
-          variant="fullWidth"
+          sx={{ mt: 2 }}
         >
-          <Tab label="All Interests" />
-          <Tab label="Received" />
-          <Tab label="Sent" />
+          <Tab icon={<Send />} label="Sent" iconPosition="start" />
+          <Tab icon={<Inbox />} label="Received" iconPosition="start" />
         </Tabs>
       </Paper>
 
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
-        </Box>
-      ) : interests.length === 0 ? (
-        <Paper elevation={2} sx={{ p: 8, textAlign: 'center' }}>
-          <Typography variant="h6" color="text.secondary">
-            No interests to show
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Start exploring profiles to send or receive interest requests
-          </Typography>
-          <Button variant="contained" sx={{ mt: 3 }} href="/search">
-            Browse Profiles
-          </Button>
-        </Paper>
+      {interests.length === 0 ? (
+        <Alert severity="info">
+          {tab === 0
+            ? "You haven't sent any interests yet. Browse profiles and send interests to connect!"
+            : "No interests received yet. Complete your profile to receive more interests."}
+        </Alert>
       ) : (
         <Grid container spacing={3}>
-          {interests.map((interest) => (
-            <Grid item xs={12} md={6} key={interest.id}>
-              <InterestCard interest={interest} />
-            </Grid>
-          ))}
+          {interests.map((interest) => renderInterestCard(interest, tab === 0))}
         </Grid>
       )}
     </Container>

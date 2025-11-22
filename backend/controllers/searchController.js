@@ -10,12 +10,6 @@ exports.basicSearch = async (req, res) => {
     const { age, gender, location, page = 1, limit = 20 } = req.query;
     
     const myProfile = await Profile.findOne({ userId: req.user.id });
-    if (!myProfile) {
-      return res.status(404).json({
-        success: false,
-        message: 'Please create your profile first'
-      });
-    }
 
     let query = {
       userId: { $ne: req.user.id },
@@ -23,10 +17,11 @@ exports.basicSearch = async (req, res) => {
       'privacy.profileVisibility': 'public'
     };
 
-    // Gender filter (opposite of user's gender)
+    // Gender filter
     if (gender) {
       query['personalInfo.gender'] = gender;
-    } else {
+    } else if (myProfile) {
+      // If user has profile, show opposite gender
       query['personalInfo.gender'] = myProfile.personalInfo.gender === 'male' ? 'female' : 'male';
     }
 

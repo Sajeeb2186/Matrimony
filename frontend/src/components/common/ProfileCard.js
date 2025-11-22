@@ -9,7 +9,6 @@ import {
   Box,
   Chip,
   IconButton,
-  Avatar,
 } from '@mui/material';
 import {
   Favorite,
@@ -25,9 +24,25 @@ import { calculateAge } from '../../utils/helpers';
 const ProfileCard = ({ profile, onInterest, onShortlist, onFavorite, onMessage, isShortlisted, isFavorited }) => {
   const navigate = useNavigate();
 
+  // Get API URL from environment
+  const API_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
+  
   const profilePhoto = profile.photos?.find(p => p.isProfile)?.url || 
-                       profile.photos?.[0]?.url || 
-                       '/default-avatar.png';
+                       profile.photos?.[0]?.url;
+  
+  // Construct full image URL
+  let imageUrl = '/default-avatar.png';
+  if (profilePhoto && profilePhoto.startsWith('/uploads')) {
+    imageUrl = `${API_URL}${profilePhoto}`;
+  } else if (profilePhoto && !profilePhoto.startsWith('/default')) {
+    imageUrl = profilePhoto;
+  }
+
+  // Debug logging
+  console.log('Profile:', profile.personalInfo?.firstName);
+  console.log('Profile Photo URL:', profilePhoto);
+  console.log('API_URL:', API_URL);
+  console.log('Final Image URL:', imageUrl);
 
   const age = calculateAge(profile.personalInfo?.dateOfBirth);
   const name = `${profile.personalInfo?.firstName} ${profile.personalInfo?.lastName}`;
@@ -50,9 +65,13 @@ const ProfileCard = ({ profile, onInterest, onShortlist, onFavorite, onMessage, 
         <CardMedia
           component="img"
           height="300"
-          image={profilePhoto}
+          image={imageUrl}
           alt={name}
           sx={{ objectFit: 'cover' }}
+          onError={(e) => {
+            console.error('Image failed to load:', imageUrl);
+            // Fallback to default avatar or keep trying
+          }}
         />
         {profile.verification?.idVerified && (
           <Chip
@@ -105,8 +124,8 @@ const ProfileCard = ({ profile, onInterest, onShortlist, onFavorite, onMessage, 
         </Typography>
       </CardContent>
 
-      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
-        <Box>
+      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2, flexWrap: 'wrap', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
           <IconButton
             size="small"
             color="error"
@@ -123,12 +142,12 @@ const ProfileCard = ({ profile, onInterest, onShortlist, onFavorite, onMessage, 
           </IconButton>
         </Box>
         
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
           <Button
             size="small"
             startIcon={<Message />}
             onClick={() => onMessage && onMessage(profile)}
-            color="secondary"
+            sx={{ minWidth: 'auto', px: 1 }}
           >
             Message
           </Button>
@@ -136,6 +155,7 @@ const ProfileCard = ({ profile, onInterest, onShortlist, onFavorite, onMessage, 
             size="small"
             startIcon={<Visibility />}
             onClick={() => navigate(`/profile/${profile.profileId}`)}
+            sx={{ minWidth: 'auto', px: 1 }}
           >
             View
           </Button>
@@ -143,6 +163,7 @@ const ProfileCard = ({ profile, onInterest, onShortlist, onFavorite, onMessage, 
             size="small"
             variant="contained"
             onClick={() => onInterest && onInterest(profile.profileId)}
+            sx={{ minWidth: 'auto', px: 1.5 }}
           >
             Interest
           </Button>

@@ -8,6 +8,15 @@ const { sendInterestNotification } = require('../utils/email');
 // @access  Private
 exports.sendInterest = async (req, res) => {
   try {
+    // Check if user has a profile
+    const myProfile = await Profile.findOne({ userId: req.user.id });
+    if (!myProfile) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please create your profile first to send interests'
+      });
+    }
+
     const targetProfile = await Profile.findOne({ 
       profileId: req.params.profileId 
     }).populate('userId', 'email');
@@ -16,6 +25,13 @@ exports.sendInterest = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Profile not found'
+      });
+    }
+
+    if (!targetProfile.userId) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target user not found'
       });
     }
 
@@ -48,12 +64,16 @@ exports.sendInterest = async (req, res) => {
       status: 'pending'
     });
 
-    // Get sender profile for notification
-    const myProfile = await Profile.findOne({ userId: req.user.id });
+    // Get sender name for notification
     const senderName = `${myProfile.personalInfo.firstName} ${myProfile.personalInfo.lastName}`;
 
     // Send email notification
-    await sendInterestNotification(targetProfile.userId.email, senderName);
+    try {
+      await sendInterestNotification(targetProfile.userId.email, senderName);
+    } catch (emailError) {
+      console.error('Email notification error:', emailError);
+      // Don't fail the request if email fails
+    }
 
     res.status(201).json({
       success: true,
@@ -115,6 +135,15 @@ exports.respondToInterest = async (req, res) => {
 // @access  Private
 exports.addToShortlist = async (req, res) => {
   try {
+    // Check if user has a profile
+    const myProfile = await Profile.findOne({ userId: req.user.id });
+    if (!myProfile) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please create your profile first'
+      });
+    }
+
     const targetProfile = await Profile.findOne({ 
       profileId: req.params.profileId 
     }).populate('userId', 'email');
@@ -123,6 +152,13 @@ exports.addToShortlist = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Profile not found'
+      });
+    }
+
+    if (!targetProfile.userId) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target user not found'
       });
     }
 
@@ -142,7 +178,8 @@ exports.addToShortlist = async (req, res) => {
     );
 
     // Update profile stats
-    targetProfile.stats.shortlists += 1;
+    targetProfile.stats = targetProfile.stats || {};
+    targetProfile.stats.shortlists = (targetProfile.stats.shortlists || 0) + 1;
     await targetProfile.save();
 
     res.status(201).json({
@@ -172,6 +209,13 @@ exports.removeFromShortlist = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Profile not found'
+      });
+    }
+
+    if (!targetProfile.userId) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target user not found'
       });
     }
 
@@ -251,6 +295,15 @@ exports.getMyShortlists = async (req, res) => {
 // @access  Private
 exports.addToFavorites = async (req, res) => {
   try {
+    // Check if user has a profile
+    const myProfile = await Profile.findOne({ userId: req.user.id });
+    if (!myProfile) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please create your profile first'
+      });
+    }
+
     const targetProfile = await Profile.findOne({ 
       profileId: req.params.profileId 
     }).populate('userId', 'email');
@@ -259,6 +312,13 @@ exports.addToFavorites = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Profile not found'
+      });
+    }
+
+    if (!targetProfile.userId) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target user not found'
       });
     }
 
@@ -304,6 +364,13 @@ exports.removeFromFavorites = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Profile not found'
+      });
+    }
+
+    if (!targetProfile.userId) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target user not found'
       });
     }
 
@@ -493,6 +560,13 @@ exports.blockUser = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Profile not found'
+      });
+    }
+
+    if (!targetProfile.userId) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target user not found'
       });
     }
 

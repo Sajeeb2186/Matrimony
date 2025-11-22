@@ -18,9 +18,11 @@ import {
   Favorite,
   Bookmark,
   ArrowBack,
+  ThumbUp,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
+import interactionService from '../../services/interactionService';
 import { calculateAge } from '../../utils/helpers';
 
 export default function ViewProfile() {
@@ -64,6 +66,42 @@ export default function ViewProfile() {
     } catch (err) {
       console.error('Start conversation error', err);
       toast.error('Failed to start conversation');
+    }
+  };
+
+  const handleInterest = async () => {
+    if (!profile) return;
+    
+    try {
+      await interactionService.sendInterest(profile.profileId);
+      toast.success('Interest sent successfully!');
+    } catch (err) {
+      console.error('Send interest error', err);
+      toast.error(err.response?.data?.message || 'Failed to send interest');
+    }
+  };
+
+  const handleFavorite = async () => {
+    if (!profile) return;
+    
+    try {
+      await interactionService.addToFavorites(profile.profileId);
+      toast.success('Added to favorites!');
+    } catch (err) {
+      console.error('Add to favorites error', err);
+      toast.error(err.response?.data?.message || 'Failed to add to favorites');
+    }
+  };
+
+  const handleShortlist = async () => {
+    if (!profile) return;
+    
+    try {
+      await interactionService.addToShortlist(profile.profileId);
+      toast.success('Added to shortlist!');
+    } catch (err) {
+      console.error('Add to shortlist error', err);
+      toast.error(err.response?.data?.message || 'Failed to add to shortlist');
     }
   };
 
@@ -118,6 +156,16 @@ export default function ViewProfile() {
               <Button
                 variant="contained"
                 size="large"
+                startIcon={<ThumbUp />}
+                onClick={handleInterest}
+                fullWidth
+              >
+                Send Interest
+              </Button>
+
+              <Button
+                variant="contained"
+                size="large"
                 startIcon={<Message />}
                 onClick={handleMessage}
                 fullWidth
@@ -129,6 +177,7 @@ export default function ViewProfile() {
                 variant="outlined"
                 size="large"
                 startIcon={<Favorite />}
+                onClick={handleFavorite}
                 fullWidth
               >
                 Add to Favorites
@@ -138,6 +187,7 @@ export default function ViewProfile() {
                 variant="outlined"
                 size="large"
                 startIcon={<Bookmark />}
+                onClick={handleShortlist}
                 fullWidth
               >
                 Shortlist

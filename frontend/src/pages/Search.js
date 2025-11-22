@@ -22,6 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import ProfileCard from '../components/common/ProfileCard';
 import api from '../services/api';
+import interactionService from '../services/interactionService';
 
 const Search = () => {
   const navigate = useNavigate();
@@ -71,6 +72,36 @@ const Search = () => {
     } catch (err) {
       console.error('Start conversation error', err);
       toast.error('Failed to start conversation');
+    }
+  };
+
+  const handleInterest = async (profileId) => {
+    try {
+      await interactionService.sendInterest(profileId);
+      toast.success('Interest sent successfully!');
+    } catch (err) {
+      console.error('Send interest error', err);
+      toast.error(err.response?.data?.message || 'Failed to send interest');
+    }
+  };
+
+  const handleShortlist = async (profileId) => {
+    try {
+      await interactionService.addToShortlist(profileId);
+      toast.success('Added to shortlist!');
+    } catch (err) {
+      console.error('Add to shortlist error', err);
+      toast.error(err.response?.data?.message || 'Failed to add to shortlist');
+    }
+  };
+
+  const handleFavorite = async (profileId) => {
+    try {
+      await interactionService.addToFavorites(profileId);
+      toast.success('Added to favorites!');
+    } catch (err) {
+      console.error('Add to favorites error', err);
+      toast.error(err.response?.data?.message || 'Failed to add to favorites');
     }
   };
 
@@ -265,6 +296,9 @@ const Search = () => {
                   <ProfileCard 
                     profile={profile}
                     onMessage={handleMessage}
+                    onInterest={handleInterest}
+                    onShortlist={handleShortlist}
+                    onFavorite={handleFavorite}
                   />
                 </Grid>
               ))}

@@ -47,7 +47,12 @@ const Login = () => {
       toast.success('Login successful!');
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err || 'Login failed');
+      // Show user-friendly error message
+      const errorMessage = err || 'Login failed. Please check your credentials.';
+      toast.error(errorMessage, {
+        position: 'top-center',
+        autoClose: 5000,
+      });
     }
   };
 

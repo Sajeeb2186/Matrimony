@@ -12,9 +12,31 @@ exports.getMatchSuggestions = async (req, res) => {
 
     const myProfile = await Profile.findOne({ userId: req.user.id });
     if (!myProfile) {
-      return res.status(404).json({
-        success: false,
-        message: 'Please create your profile first'
+      // If no profile, return all active profiles
+      const profiles = await Profile.find({
+        userId: { $ne: req.user.id },
+        isActive: true,
+        'privacy.profileVisibility': 'public'
+      })
+      .select('-documents -privacy')
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .sort({ createdAt: -1 });
+
+      const count = await Profile.countDocuments({
+        userId: { $ne: req.user.id },
+        isActive: true,
+        'privacy.profileVisibility': 'public'
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: profiles.map(p => ({ profile: p, score: 0 })),
+        pagination: {
+          total: count,
+          page: parseInt(page),
+          pages: Math.ceil(count / limit)
+        }
       });
     }
 
