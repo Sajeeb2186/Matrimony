@@ -23,26 +23,39 @@ import { calculateAge } from '../../utils/helpers';
 
 const ProfileCard = ({ profile, onInterest, onShortlist, onFavorite, onMessage, isShortlisted, isFavorited }) => {
   const navigate = useNavigate();
+  const [imgSrc, setImgSrc] = React.useState('');
 
   // Get API URL from environment
   const API_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
   
-  const profilePhoto = profile.photos?.find(p => p.isProfile)?.url || 
+  const profilePhoto = profile.profilePhoto || 
+                       profile.photos?.find(p => p.isProfile)?.url || 
                        profile.photos?.[0]?.url;
   
   // Construct full image URL
   let imageUrl = '/default-avatar.png';
   if (profilePhoto && profilePhoto.startsWith('/uploads')) {
+    // Local upload - prepend backend URL
     imageUrl = `${API_URL}${profilePhoto}`;
+  } else if (profilePhoto && profilePhoto.startsWith('http')) {
+    // External URL (e.g., cloud storage)
+    imageUrl = profilePhoto;
   } else if (profilePhoto && !profilePhoto.startsWith('/default')) {
+    // Other paths
     imageUrl = profilePhoto;
   }
+  // If no photo or default-avatar.png, use the local public folder default
 
-  // Debug logging
-  console.log('Profile:', profile.personalInfo?.firstName);
-  console.log('Profile Photo URL:', profilePhoto);
-  console.log('API_URL:', API_URL);
-  console.log('Final Image URL:', imageUrl);
+  // Set image source on mount and when profile changes
+  React.useEffect(() => {
+    setImgSrc(imageUrl);
+  }, [imageUrl]);
+
+  // Handle image load error
+  const handleImageError = () => {
+    console.error('Image failed to load:', imgSrc);
+    setImgSrc('/default-avatar.png');
+  };
 
   const age = calculateAge(profile.personalInfo?.dateOfBirth);
   const name = `${profile.personalInfo?.firstName} ${profile.personalInfo?.lastName}`;
@@ -65,13 +78,10 @@ const ProfileCard = ({ profile, onInterest, onShortlist, onFavorite, onMessage, 
         <CardMedia
           component="img"
           height="300"
-          image={imageUrl}
+          image={imgSrc}
           alt={name}
           sx={{ objectFit: 'cover' }}
-          onError={(e) => {
-            console.error('Image failed to load:', imageUrl);
-            // Fallback to default avatar or keep trying
-          }}
+          onError={handleImageError}
         />
         {profile.verification?.idVerified && (
           <Chip
