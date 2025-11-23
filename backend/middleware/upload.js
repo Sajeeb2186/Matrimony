@@ -14,20 +14,27 @@ cloudinary.config({
 let storage;
 
 if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+  console.log('Using Cloudinary storage with cloud:', process.env.CLOUDINARY_CLOUD_NAME);
   // Cloudinary storage (for production)
-  storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-      folder: 'matrimony-uploads',
-      allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
-      transformation: [{ width: 800, height: 800, crop: 'limit' }],
-      public_id: (req, file) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        return file.fieldname + '-' + uniqueSuffix;
+  try {
+    storage = new CloudinaryStorage({
+      cloudinary: cloudinary,
+      params: {
+        folder: 'matrimony-uploads',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
+        transformation: [{ width: 800, height: 800, crop: 'limit' }],
+        public_id: (req, file) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+          return file.fieldname + '-' + uniqueSuffix;
+        }
       }
-    }
-  });
+    });
+  } catch (err) {
+    console.error('Cloudinary storage initialization error:', err);
+    throw err;
+  }
 } else {
+  console.log('Using local disk storage (development mode)');
   // Local disk storage (for development)
   storage = multer.diskStorage({
     destination: function (req, file, cb) {
