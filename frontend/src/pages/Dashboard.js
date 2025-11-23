@@ -67,12 +67,18 @@ const Dashboard = () => {
 
     const fetchStats = async () => {
       try {
+        console.log('Fetching dashboard stats...');
         const response = await profileService.getDashboardStats();
+        console.log('Stats response:', response);
         if (response.success && response.data) {
+          console.log('Setting stats to:', response.data);
           setStats(response.data);
+        } else {
+          console.warn('Stats response not successful or no data:', response);
         }
       } catch (err) {
         console.error('Error fetching stats:', err);
+        console.error('Error details:', err.response?.data);
         // Keep default stats if fetch fails
         setStats({
           profileViews: 0,
