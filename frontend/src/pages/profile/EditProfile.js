@@ -17,11 +17,17 @@ import {
   Select,
   Alert,
   CircularProgress,
+  Avatar,
+  IconButton,
+  Card,
+  CardMedia,
 } from '@mui/material';
+import { PhotoCamera, Delete } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import profileService from '../../services/profileService';
+import api from '../../services/api';
 
-const steps = ['Personal Info', 'Professional Info', 'Location & Religious Info'];
+const steps = ['Personal Info', 'Professional Info', 'Location & Religious Info', 'Upload Photos'];
 
 export default function EditProfile() {
   const navigate = useNavigate();
@@ -29,6 +35,9 @@ export default function EditProfile() {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [error, setError] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState('');
+  const [existingPhotos, setExistingPhotos] = useState([]);
 
   const [formData, setFormData] = useState({
     personalInfo: {
@@ -101,6 +110,13 @@ export default function EditProfile() {
               drinking: profile.lifestyle?.drinking || '',
             },
           });
+          // Set existing photos
+          setExistingPhotos(profile.photos || []);
+          // Set preview to first photo if available
+          if (profile.photos && profile.photos.length > 0) {
+            const firstPhoto = profile.photos.find(p => p.isProfile) || profile.photos[0];
+            setPhotoPreview(firstPhoto.url);
+          }
         }
       } catch (err) {
         if (err.response?.status === 404) {
@@ -140,8 +156,29 @@ export default function EditProfile() {
     setError('');
 
     try {
+      // First update the profile info
       await profileService.updateProfile(formData);
-      toast.success('Profile updated successfully!');
+      
+      // If a new photo is selected, upload it
+      if (photoFile) {
+        const photoFormData = new FormData();
+        photoFormData.append('photo', photoFile);
+        
+        try {
+          await api.post('/profile/upload-photo', photoFormData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+          toast.success('Profile and photo updated successfully!');
+        } catch (photoErr) {
+          console.error('Photo upload error:', photoErr);
+          toast.warning('Profile updated but photo upload failed. Please try again.');
+        }
+      } else {
+        toast.success('Profile updated successfully!');
+      }
+      
       navigate('/dashboard');
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Failed to update profile';
@@ -385,6 +422,61 @@ export default function EditProfile() {
                   <MenuItem value="occasionally">Occasionally</MenuItem>
                 </Select>
               </FormControl>
+            </Grid>
+          </Grid>
+        );
+
+      case 3:
+        return (
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                Upload Profile Photo
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Upload a clear photo of yourself. This will be your profile picture.
+              </Typography>
+            </Grid>
+
+            {/* Current/Preview Photo */}
+            <Grid item xs={12} display="flex" justifyContent="center">
+              <Box sx={{ textAlign: 'center' }}>
+                <Avatar
+                  src={photoPreview || '/default-avatar.png'}
+                  sx={{ width: 200, height: 200, mx: 'auto', mb: 2 }}
+                />
+                
+                <input
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  id="photo-upload"
+                  type="file"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setPhotoFile(file);
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setPhotoPreview(reader.result);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+                <label htmlFor="photo-upload">
+                  <Button variant="contained" component="span" startIcon={<PhotoCamera />}>
+                    {photoPreview ? 'Change Photo' : 'Upload Photo'}
+                  </Button>
+                </label>
+
+                {existingPhotos.length > 0 && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Current photo will be updated when you save
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
             </Grid>
           </Grid>
         );
