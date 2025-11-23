@@ -73,16 +73,12 @@ const Dashboard = () => {
         if (response.success && response.data) {
           console.log('Setting stats to:', response.data);
           setStats(response.data);
-          // Show alert with actual data for debugging
-          alert(`Stats loaded: Shortlists=${response.data.shortlists}, Views=${response.data.profileViews}`);
         } else {
           console.warn('Stats response not successful or no data:', response);
-          alert('Stats response failed or no data');
         }
       } catch (err) {
         console.error('Error fetching stats:', err);
         console.error('Error details:', err.response?.data);
-        alert(`Error fetching stats: ${err.message}`);
         // Keep default stats if fetch fails
         setStats({
           profileViews: 0,
