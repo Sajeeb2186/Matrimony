@@ -392,10 +392,16 @@ exports.getDashboardStats = async (req, res) => {
     // Get user's profile
     const profile = await Profile.findOne({ userId: req.user.id });
     
+    // If no profile exists, return zeros
     if (!profile) {
-      return res.status(404).json({
-        success: false,
-        message: 'Profile not found'
+      return res.status(200).json({
+        success: true,
+        data: {
+          profileViews: 0,
+          interests: 0,
+          shortlists: 0,
+          matches: 0
+        }
       });
     }
 
