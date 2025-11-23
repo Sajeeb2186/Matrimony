@@ -409,9 +409,9 @@ exports.getDashboardStats = async (req, res) => {
       status: { $in: ['pending', 'accepted'] }
     });
 
-    // Count shortlisted (people who shortlisted this user)
+    // Count shortlisted by this user (people this user has shortlisted)
     const shortlisted = await Interaction.countDocuments({
-      toUserId: req.user.id,
+      fromUserId: req.user.id,
       interactionType: 'shortlist',
       status: 'active'
     });
