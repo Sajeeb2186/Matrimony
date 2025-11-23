@@ -152,6 +152,16 @@ exports.getProfileById = async (req, res) => {
 // @access  Private
 exports.uploadPhoto = async (req, res) => {
   try {
+    console.log('Upload photo request received');
+    console.log('File info:', req.file ? {
+      fieldname: req.file.fieldname,
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      path: req.file.path,
+      filename: req.file.filename
+    } : 'No file');
+
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -169,7 +179,10 @@ exports.uploadPhoto = async (req, res) => {
     }
 
     // Use Cloudinary URL if available (production), otherwise local path
+    // For Cloudinary, req.file.path contains the full Cloudinary URL
     const photoUrl = req.file.path || `/uploads/${req.file.filename}`;
+    
+    console.log('Photo URL to save:', photoUrl);
 
     profile.photos.push({
       url: photoUrl,
@@ -178,6 +191,8 @@ exports.uploadPhoto = async (req, res) => {
     });
 
     await profile.save();
+    
+    console.log('Photo saved successfully to profile');
 
     res.status(200).json({
       success: true,
@@ -186,6 +201,7 @@ exports.uploadPhoto = async (req, res) => {
     });
   } catch (error) {
     console.error('Upload photo error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Server error',
