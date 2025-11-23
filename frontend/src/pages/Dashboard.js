@@ -232,6 +232,11 @@ const Dashboard = () => {
       )}
 
       {/* Stats Grid */}
+      <Box sx={{ mb: 2, p: 2, bgcolor: 'warning.light', borderRadius: 1 }}>
+        <Typography variant="body2">
+          DEBUG - Stats State: profileViews={stats.profileViews}, interests={stats.interests}, shortlists={stats.shortlists}, matches={stats.matches}
+        </Typography>
+      </Box>
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
