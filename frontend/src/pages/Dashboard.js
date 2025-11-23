@@ -67,19 +67,12 @@ const Dashboard = () => {
 
     const fetchStats = async () => {
       try {
-        const timestamp = new Date().toISOString();
-        console.log(`[${timestamp}] Fetching dashboard stats...`);
         const response = await profileService.getDashboardStats();
-        console.log(`[${timestamp}] Stats response:`, response);
         if (response.success && response.data) {
-          console.log(`[${timestamp}] Setting stats to:`, response.data);
           setStats(response.data);
-        } else {
-          console.warn(`[${timestamp}] Stats response not successful or no data:`, response);
         }
       } catch (err) {
         console.error('Error fetching stats:', err);
-        console.error('Error details:', err.response?.data);
         // Keep default stats if fetch fails
         setStats({
           profileViews: 0,
@@ -232,11 +225,6 @@ const Dashboard = () => {
       )}
 
       {/* Stats Grid */}
-      <Box sx={{ mb: 2, p: 2, bgcolor: 'warning.light', borderRadius: 1 }}>
-        <Typography variant="body2">
-          DEBUG - Stats State: profileViews={stats.profileViews}, interests={stats.interests}, shortlists={stats.shortlists}, matches={stats.matches}
-        </Typography>
-      </Box>
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
