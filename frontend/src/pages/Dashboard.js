@@ -67,14 +67,15 @@ const Dashboard = () => {
 
     const fetchStats = async () => {
       try {
-        console.log('Fetching dashboard stats...');
+        const timestamp = new Date().toISOString();
+        console.log(`[${timestamp}] Fetching dashboard stats...`);
         const response = await profileService.getDashboardStats();
-        console.log('Stats response:', response);
+        console.log(`[${timestamp}] Stats response:`, response);
         if (response.success && response.data) {
-          console.log('Setting stats to:', response.data);
+          console.log(`[${timestamp}] Setting stats to:`, response.data);
           setStats(response.data);
         } else {
-          console.warn('Stats response not successful or no data:', response);
+          console.warn(`[${timestamp}] Stats response not successful or no data:`, response);
         }
       } catch (err) {
         console.error('Error fetching stats:', err);
