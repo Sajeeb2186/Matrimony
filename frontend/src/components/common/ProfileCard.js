@@ -32,17 +32,19 @@ const ProfileCard = ({ profile, onInterest, onShortlist, onFavorite, onMessage, 
                        profile.photos?.find(p => p.isProfile)?.url || 
                        profile.photos?.[0]?.url;
   
-  // Construct full image URL
+  // Construct full image URL - handle Cloudinary URLs, local uploads, and defaults
   let imageUrl = '/default-avatar.png';
-  if (profilePhoto && profilePhoto.startsWith('/uploads')) {
-    // Local upload - prepend backend URL
-    imageUrl = `${API_URL}${profilePhoto}`;
-  } else if (profilePhoto && profilePhoto.startsWith('http')) {
-    // External URL (e.g., cloud storage)
-    imageUrl = profilePhoto;
-  } else if (profilePhoto && !profilePhoto.startsWith('/default')) {
-    // Other paths
-    imageUrl = profilePhoto;
+  if (profilePhoto) {
+    if (profilePhoto.startsWith('http://') || profilePhoto.startsWith('https://')) {
+      // Absolute URL (Cloudinary, S3, etc.) - use as-is
+      imageUrl = profilePhoto;
+    } else if (profilePhoto.startsWith('/uploads')) {
+      // Local upload - prepend backend URL
+      imageUrl = `${API_URL}${profilePhoto}`;
+    } else if (!profilePhoto.startsWith('/default')) {
+      // Other relative paths
+      imageUrl = profilePhoto;
+    }
   }
   // If no photo or default-avatar.png, use the local public folder default
 

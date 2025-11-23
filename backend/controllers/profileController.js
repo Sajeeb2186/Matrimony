@@ -168,8 +168,8 @@ exports.uploadPhoto = async (req, res) => {
       });
     }
 
-    // In production, upload to Cloudinary or S3
-    const photoUrl = `/uploads/${req.file.filename}`;
+    // Use Cloudinary URL if available (production), otherwise local path
+    const photoUrl = req.file.path || `/uploads/${req.file.filename}`;
 
     profile.photos.push({
       url: photoUrl,
