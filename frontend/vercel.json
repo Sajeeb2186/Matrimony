@@ -1,6 +1,8 @@
 {
-  "env": {
-    "REACT_APP_API_URL": "https://backend-jdqrtc55r-sajeeb2186s-projects.vercel.app/api"
+  "build": {
+    "env": {
+      "REACT_APP_API_URL": "https://backend-jdqrtc55r-sajeeb2186s-projects.vercel.app/api"
+    }
   },
   "rewrites": [
     {
