@@ -39,7 +39,8 @@ export default function ViewProfile() {
   const loadProfile = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/profile/${profileId}`);
+      // Use /profile/view to increment view count
+      const res = await api.get(`/profile/view/${profileId}`);
       setProfile(res.data?.data);
     } catch (err) {
       console.error('Load profile error', err);
