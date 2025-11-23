@@ -53,6 +53,11 @@ const updatePrivacy = async (privacySettings) => {
   return response.data;
 };
 
+const getDashboardStats = async () => {
+  const response = await api.get('/profile/stats');
+  return response.data;
+};
+
 const profileService = {
   createProfile,
   getMyProfile,
@@ -63,6 +68,7 @@ const profileService = {
   deletePhoto,
   uploadDocument,
   updatePrivacy,
+  getDashboardStats,
 };
 
 export default profileService;

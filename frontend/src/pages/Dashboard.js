@@ -65,15 +65,26 @@ const Dashboard = () => {
       }
     };
 
-    checkProfile();
+    const fetchStats = async () => {
+      try {
+        const response = await profileService.getDashboardStats();
+        if (response.success && response.data) {
+          setStats(response.data);
+        }
+      } catch (err) {
+        console.error('Error fetching stats:', err);
+        // Keep default stats if fetch fails
+        setStats({
+          profileViews: 0,
+          interests: 0,
+          shortlists: 0,
+          matches: 0,
+        });
+      }
+    };
 
-    // Simulated stats - replace with actual API call
-    setStats({
-      profileViews: 125,
-      interests: 12,
-      shortlists: 8,
-      matches: 15,
-    });
+    checkProfile();
+    fetchStats();
   }, []);
 
   const StatCard = ({ icon: Icon, title, value, color, onClick }) => (

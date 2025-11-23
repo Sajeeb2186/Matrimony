@@ -18,6 +18,7 @@ const handleMulterError = (err, req, res, next) => {
 };
 
 router.post('/create', protect, profileController.createProfile);
+router.get('/stats', protect, profileController.getDashboardStats);
 router.get('/me', protect, profileController.getMyProfile); // Alias for my-profile
 router.get('/my-profile', protect, profileController.getMyProfile);
 router.put('/update', protect, profileController.updateProfile);

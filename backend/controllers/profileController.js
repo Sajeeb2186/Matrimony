@@ -379,3 +379,64 @@ exports.viewProfile = async (req, res) => {
     });
   }
 };
+
+// @desc    Get user dashboard stats
+// @route   GET /api/profile/stats
+// @access  Private
+exports.getDashboardStats = async (req, res) => {
+  try {
+    const Profile = require('../models/Profile');
+    const Interaction = require('../models/Interaction');
+    const Match = require('../models/Match');
+
+    // Get user's profile
+    const profile = await Profile.findOne({ userId: req.user.id });
+    
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: 'Profile not found'
+      });
+    }
+
+    // Get profile views from stats
+    const profileViews = profile.stats?.views || 0;
+
+    // Count interests received (people who sent interest to this user)
+    const interestsReceived = await Interaction.countDocuments({
+      toUserId: req.user.id,
+      interactionType: 'interest',
+      status: { $in: ['pending', 'accepted'] }
+    });
+
+    // Count shortlisted (people who shortlisted this user)
+    const shortlisted = await Interaction.countDocuments({
+      toUserId: req.user.id,
+      interactionType: 'shortlist',
+      status: 'active'
+    });
+
+    // Count matches (mutual interests or suggested matches)
+    const matches = await Match.countDocuments({
+      userId: req.user.id,
+      status: { $in: ['suggested', 'viewed', 'interested'] }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        profileViews,
+        interests: interestsReceived,
+        shortlists: shortlisted,
+        matches
+      }
+    });
+  } catch (error) {
+    console.error('Get dashboard stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+};
